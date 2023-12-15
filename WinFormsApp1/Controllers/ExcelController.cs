@@ -14,7 +14,8 @@ namespace WinFormsApp1.Controllers
             _context = context;
         }
 
-
+        // Метод для чтения и сохранения данных из Excel-файла в базу данных
+        /// <param name="filePath">Путь к Excel-файлу</param>
         public async Task ReadAndSaveToDatabaseAsync(string filePath)
         {
             if (Path.GetExtension(filePath).Equals(".xlsx", StringComparison.OrdinalIgnoreCase))
@@ -31,21 +32,25 @@ namespace WinFormsApp1.Controllers
             }
         }
 
+        // Приватный метод для асинхронного сохранения списка моделей в базу данных
         private async Task SaveToDatabaseAsync(List<FileModel> data)
         {
             await _context.Files.AddRangeAsync(data);
-
             await _context.SaveChangesAsync();
         }
 
-        public async Task ReadAndSaveXlsxToDatabaseAsync(string filePath)
+        // Метод для асинхронного чтения и сохранения данных из файла формата xlsx
+        /// <param name="filePath">Путь к файлу</param>
+        private async Task ReadAndSaveXlsxToDatabaseAsync(string filePath)
         {
             var result = new List<FileModel>();
 
             using (var package = new ExcelPackage(new FileInfo(filePath)))
             {
+                // Чтение данных из листа Excel
                 var worksheet = package.Workbook.Worksheets[0];
 
+                // Извлечение метаинформации о файле из ячеек
                 var bankName = worksheet.Cells[1, 1].Text;
                 var title = worksheet.Cells[2, 1].Text;
                 var period = worksheet.Cells[3, 1].Text;
@@ -53,6 +58,7 @@ namespace WinFormsApp1.Controllers
                 var printTime = DateTime.Parse(worksheet.Cells[6, 1].Text);
                 var currency = worksheet.Cells[6, 7].Text;
 
+                // Создание объекта Header
                 var header = new Header
                 {
                     BankName = bankName,
@@ -67,8 +73,11 @@ namespace WinFormsApp1.Controllers
                 List<Account> accounts = new List<Account>();
                 Balance balance = new Balance();
                 List<AccountClass> accountClasses = new List<AccountClass>();
+
+                // Цикл по строкам листа Excel
                 for (int row = 9; row <= worksheet.Dimension.Rows; row++)
                 {
+                    // Обработка строк с информацией о балансе
                     if (worksheet.Cells[row, 1].Text.Contains("БАЛАНС"))
                     {
                         balance.BalanceTitle = worksheet.Cells[row, 1].Text;
@@ -81,17 +90,16 @@ namespace WinFormsApp1.Controllers
                         break;
                     }
                     else
+                    // Обработка строк с информацией о классе
                     if (worksheet.Cells[row, 1].Text.Contains("КЛАСС ")) { className = worksheet.Cells[row, 1].Text; }
                     else
+                    // Обработка строк с информацией о балансе класса
                     if (worksheet.Cells[row, 1].Text.Contains("ПО"))
                     {
-
-
                         accountClasses.Add(new AccountClass()
                         {
                             Name = className,
                             ClassAccounts = accounts,
-
                             BalanceTitle = worksheet.Cells[row, 1].Text,
                             BalanceOpeningBalanceActive = worksheet.Cells[row, 2].GetValue<decimal>(),
                             BalanceOpeningBalancePassive = worksheet.Cells[row, 3].GetValue<decimal>(),
@@ -99,14 +107,13 @@ namespace WinFormsApp1.Controllers
                             BalanceTurnoverCredit = worksheet.Cells[row, 5].GetValue<decimal>(),
                             BalanceClosingBalanceActive = worksheet.Cells[row, 6].GetValue<decimal>(),
                             BalanceClosingBalancePassive = worksheet.Cells[row, 7].GetValue<decimal>(),
-
                         });
                         accounts = new List<Account>();
                         className = "";
                     }
                     else
+                    // Обработка строк с информацией о счете
                     {
-
                         accounts.Add(new Account()
                         {
                             AccountId = worksheet.Cells[row, 1].GetValue<int>(),
@@ -120,11 +127,11 @@ namespace WinFormsApp1.Controllers
                     }
                 }
 
-
+                // Генерация уникального имени файла
                 var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(filePath);
-
                 var fileName = $"{fileNameWithoutExtension}_{DateTime.UtcNow:yyyyMMddHHmmss}.txt";
 
+                // Создание объекта FileModel с полученными данными
                 var fileModel = new FileModel
                 {
                     FileName = fileName,
@@ -141,8 +148,9 @@ namespace WinFormsApp1.Controllers
             }
         }
 
-
-        public async Task ReadAndSaveXlsToDatabaseAsync(string filePath)
+        // Метод для асинхронного чтения и сохранения данных из файла формата xls
+        /// <param name="filePath">Путь к файлу</param>
+        private async Task ReadAndSaveXlsToDatabaseAsync(string filePath)
         {
             var result = new List<FileModel>();
 
@@ -153,6 +161,7 @@ namespace WinFormsApp1.Controllers
                     var dataset = reader.AsDataSet();
                     var dataTable = dataset.Tables[0];
 
+                    // Извлечение метаинформации о файле из ячеек
                     var bankName = dataTable.Rows[0][0].ToString();
                     var title = dataTable.Rows[1][0].ToString();
                     var period = dataTable.Rows[2][0].ToString();
@@ -160,6 +169,7 @@ namespace WinFormsApp1.Controllers
                     var printTime = DateTime.Parse(dataTable.Rows[5][0].ToString());
                     var currency = dataTable.Rows[5][6].ToString();
 
+                    // Создание объекта Header
                     var header = new Header
                     {
                         BankName = bankName,
@@ -175,8 +185,10 @@ namespace WinFormsApp1.Controllers
                     Balance balance = new Balance();
                     List<AccountClass> accountClasses = new List<AccountClass>();
 
+                    // Цикл по строкам таблицы Excel
                     for (int row = 8; row < dataTable.Rows.Count; row++)
                     {
+                        // Обработка строк с информацией о балансе
                         if (dataTable.Rows[row][0].ToString().Contains("БАЛАНС"))
                         {
                             balance.BalanceTitle = dataTable.Rows[row][0].ToString();
@@ -225,10 +237,11 @@ namespace WinFormsApp1.Controllers
                         }
                     }
 
+                    // Генерация уникального имени файла
                     var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(filePath);
-
                     var fileName = $"{fileNameWithoutExtension}_{DateTime.UtcNow:yyyyMMddHHmmss}.txt";
 
+                    // Создание объекта FileModel с полученными данными
                     var fileModel = new FileModel
                     {
                         FileName = fileName,
@@ -245,7 +258,5 @@ namespace WinFormsApp1.Controllers
                 }
             }
         }
-
-
     }
 }

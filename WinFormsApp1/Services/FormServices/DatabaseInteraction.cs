@@ -5,6 +5,7 @@ namespace WinFormsApp1
 {
     public partial class Form1
     {
+        // Метод для получения списка имен файлов из базы данных
         private List<string> GetFileNamesFromDatabase()
         {
             try

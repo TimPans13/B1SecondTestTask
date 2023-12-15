@@ -7,24 +7,32 @@ namespace WinFormsApp1
 {
     public partial class Form1
     {
-
+        // Отображение содержимого выбранного файла в iGrid
         private async void DisplayFileContent(string fileName)
         {
             try
             {
+                // Очистка строк и столбцов iGrid перед отображением нового файла
                 iGrid1.Rows.Clear();
                 iGrid1.Cols.Clear();
+
+                // Создание контекста базы данных и контроллера для работы с данными
                 ApplicationDbContext dbContext = new ApplicationDbContext();
                 var dataViewController = new DataViewController(dbContext);
 
+                // Получение содержимого файла из базы данных
                 var fileContent = await dataViewController.GetFileContentByNameAsync(fileName);
 
                 if (fileContent != null)
                 {
+                    // Установка числа строк и столбцов в iGrid в соответствии с данными файла
                     iGrid1.Rows.Count = fileContent.RowCount + 1;
                     iGrid1.Cols.Count = fileContent.ColumnCount + 1;
 
+                    // Настройка заголовка iGrid
                     await SetupGridHeader(fileContent);
+
+                    // Заполнение iGrid данными из файла
                     await PopulateGridWithData(fileContent);
                 }
                 else
@@ -38,8 +46,10 @@ namespace WinFormsApp1
             }
         }
 
+        // Настройка заголовка iGrid на основе данных файла
         private async Task SetupGridHeader(FileModel fileContent)
         {
+            //объеденение ячеек
             iGCell myCell = iGrid1.Cells[1, 0];
             myCell.SpanCols = 7;
             myCell = iGrid1.Cells[2, 0];
@@ -78,12 +88,12 @@ namespace WinFormsApp1
 
         private async Task PopulateGridWithData(FileModel fileContent)
         {
-            int rowIndex = 8;
+            int rowIndex = 8;//первая строке НЕ заголовок
 
             rowIndex = await SetupAccountClassCells(fileContent, rowIndex);
             await SetupBalanceSectionCells(fileContent, rowIndex);
         }
-
+        // Настройка ячеек для классов счетов в iGrid
         private async Task<int> SetupAccountClassCells(FileModel fileContent, int temp)
         {
 
@@ -105,7 +115,7 @@ namespace WinFormsApp1
             }
             return temp;
         }
-
+        // Заполнение ячеек счетов в iGrid
         private async Task<int> PopulateAccountsCells(List<Account> accounts, int temp)
         {
             foreach (var account in accounts)
@@ -122,7 +132,7 @@ namespace WinFormsApp1
 
             return temp;
         }
-
+        // Настройка ячеек для раздела баланса в iGrid
         private async Task SetupBalanceSectionCells(FileModel fileContent, int temp)
         {
             await UpdateCellValueAsync(iGrid1.Cells[temp, 0], fileContent.Balance.BalanceTitle);

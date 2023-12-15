@@ -16,6 +16,9 @@ namespace WinFormsApp1.Controllers
             _context = context;
         }
 
+        // Метод для асинхронного получения содержимого файла по его имени
+        /// <param name="fileName">Имя файла</param>
+        /// <returns>Модель файла с заголовком, классами, счетами и балансом</returns>
         public async Task<FileModel> GetFileContentByNameAsync(string fileName)
         {
             var result = await _context.Files
@@ -28,7 +31,8 @@ namespace WinFormsApp1.Controllers
             return result;
         }
 
-
+        // Метод для получения списка имен файлов из базы данных
+        /// <returns>Список имен файлов в базе данных</returns>
         public List<string> GetFileNamesFromDatabase()
         {
             var fileNames = _context.Files.Select(file => file.FileName).ToList();
